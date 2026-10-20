@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SpyScript Field Terminal</title>
+<style>
+:root{--bg:#080d0a;--p:#0d1511;--p2:#121d17;--bd:#1f3a2b;--tx:#c8e6d0;--dim:#6b8f78;--ac:#39ff88;--am:#ffb830;--er:#ff5c5c;--k:#39ff88;--s:#ffb830;--n:#6ad4ff;--c:#5d7a69;--i:#c792ff;--b:#ff8fb1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-theme="light"]{color-scheme:light;--bg:#eef3ef;--p:#fff;--p2:#e3ece6;--bd:#b5c9bb;--tx:#17301f;--dim:#5d7566;--ac:#0b8a43;--am:#a86300;--er:#c42b2b;--k:#0b8a43;--s:#a86300;--n:#0b6e9e;--c:#7b9285;--i:#7b3fc4;--b:#c2306a}
+:root[data-theme="dark"]{color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--p);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+h1{font-size:14px;margin:0 auto 0 0;letter-spacing:.15em;color:var(--ac)}h1 span{color:var(--dim)}
+button{background:var(--p2);color:var(--tx);border:1px solid var(--bd);padding:5px 12px;font:inherit;cursor:pointer;border-radius:3px}
+button:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}button:disabled{opacity:.4;cursor:default}
+#run{color:var(--ac);border-color:var(--ac)}#stop{color:var(--er)}
+main{flex:1;display:grid;grid-template-columns:170px 1fr;min-height:0}
+@media(max-width:640px){main{grid-template-columns:1fr;grid-template-rows:auto 1fr}#files{flex-direction:row;overflow-x:auto}}
+#files{background:var(--p);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:auto}
+.f{padding:6px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:6px;white-space:nowrap;border-left:2px solid transparent;color:var(--dim)}
+.f.a{color:var(--ac);background:var(--p2);border-left-color:var(--ac)}.f b{font-weight:400;opacity:.5}.f b:hover{color:var(--er);opacity:1}
+#work{display:flex;flex-direction:column;min-height:0;min-width:0}
+#bar{display:flex;gap:8px;align-items:center;padding:4px 10px;background:var(--p2);border-bottom:1px solid var(--bd);color:var(--dim)}
+#fname{background:transparent;border:0;border-bottom:1px dashed var(--bd);color:var(--tx);font:inherit;width:170px}
+#st{margin-left:auto}
+#ed{flex:1.4;display:flex;position:relative;min-height:0;background:var(--bg)}
+#ln,#hl,#ta{font:14px/1.6 ui-monospace,Menlo,Consolas,monospace;margin:0;padding:10px;tab-size:4}
+#ln{width:46px;text-align:right;color:var(--c);overflow:hidden;white-space:pre;border-right:1px solid var(--bd);user-select:none}
+#cw{position:relative;flex:1;min-width:0}
+#hl,#ta{position:absolute;inset:0;white-space:pre;overflow:auto;border:0;width:100%;height:100%}
+#hl{pointer-events:none;color:var(--tx)}#hl i{font-style:normal}
+#ta{background:transparent;color:transparent;caret-color:var(--ac);resize:none;outline:0}
+.k{color:var(--k)}.s{color:var(--s)}.n{color:var(--n)}.c{color:var(--c)}.i{color:var(--i)}.b{color:var(--b)}
+#term{flex:1;display:flex;flex-direction:column;min-height:90px;border-top:2px solid var(--bd);background:var(--p)}
+#th{display:flex;align-items:center;gap:8px;padding:3px 10px;color:var(--dim);font-size:12px;letter-spacing:.1em}
+#dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}#dot.on{background:var(--ac);box-shadow:0 0 6px var(--ac)}
+#out{flex:1;overflow:auto;padding:4px 10px;white-space:pre-wrap;word-break:break-word}
+.e{color:var(--er)}.d{color:var(--dim)}.in{color:var(--am)}
+#inrow{display:flex;gap:6px;padding:4px 10px;border-top:1px solid var(--bd)}
+#inrow span{color:var(--ac)}#inp{flex:1;background:transparent;border:0;color:var(--am);font:inherit;outline:0}
+</style></head><body>
+<header><h1>SPYSCRIPT <span>// FIELD TERMINAL</span></h1>
+<button id="run">▶ Run</button><button id="stop" disabled>■ Stop</button>
+<button id="new">+ New</button><button id="save">Save</button><button id="open">Open</button><button id="dl">Download</button><button id="theme">☀ Light</button>
+<input type="file" id="fi" accept=".ss,.txt" hidden></header>
+<main><nav id="files"></nav>
+<div id="work"><div id="bar"><span>file:</span><input id="fname" spellcheck="false"><button id="ren" style="padding:1px 8px">Rename</button><span id="st"></span></div>
+<div id="ed"><pre id="ln"></pre><div id="cw"><pre id="hl"></pre><textarea id="ta" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></div></div>
+<div id="term"><div id="th"><div id="dot"></div>TERMINAL<button id="clr" style="margin-left:auto;padding:1px 8px">Clear</button></div>
+<div id="out"></div><div id="inrow"><span>&gt;</span><input id="inp" placeholder="stdin: answers intel.in(), intel.int(), intel.num()" spellcheck="false"></div></div></div></main>
+<script>
+const $=id=>document.getElementById(id);
+/* ================= LEXER ================= */
+const KW={agent:'AGENT',intel:'INTEL',verify:'VERIFY',alternative:'ALTERNATIVE',otherwise:'OTHERWISE',infiltrate:'INFILTRATE',penetrate:'PENETRATE',protocol:'PROTOCOL',rule:'RULE',default:'DEFAULT',abort:'ABORT',proceed:'PROCEED',affirmative:'AFFIRMATIVE',denied:'DENIED',sync:'AND',alt:'OR',neg:'NOT',mission:'MISSION',operation:'OPERATION',extract:'EXTRACT'};
+const ONE={'*':'STAR','%':'PERCENT','(':'LPAREN',')':'RPAREN','/':'SLASH','{':'LBRACES','}':'RBRACES',',':'COMMA',';':'SEMI_COLON',':':'COLON','.':'DOT'};
+class Dbl{constructor(v){this.v=v}}
+function lex(s,out){const T=[];let i=0,line=1,ls=0,bad=false;
+const A=c=>/[A-Za-z_]/.test(c),D=c=>c>='0'&&c<='9';
+while(i<s.length){const st=i,sl=line,sc=i-ls+1,c=s[i++];
+const add=(t,l)=>T.push({type:t,lexeme:s.slice(st,i),literal:l,line:sl,column:sc});
+const e=(lx,m)=>{out(`[line ${sl}, col ${sc}] Error at '${lx}': ${m}`);bad=true};
+const m=x=>s[i]===x?(i++,true):false;
+if(c==='+')add(m('+')?'PLUS_PLUS':'PLUS');
+else if(c==='-'){if(s.startsWith('.-.',i)){while(i<s.length&&s[i]!=='\n')i++}else add(m('-')?'MINUS_MINUS':'MINUS')}
+else if(c==='&'){m('&')?add('AND'):e('&',"Unexpected character '&'. Did you mean '&&'?")}
+else if(c==='|'){m('|')?add('OR'):e('|',"Unexpected character '|'. Did you mean '||'?")}
+else if(ONE[c])add(ONE[c]);
+else if(c==='!')add(m('=')?'BANG_EQUAL':'NOT');
+else if(c==='=')add(m('=')?'EQUAL_EQUAL':'EQUAL');
+else if(c==='<')add(m('=')?'LESS_EQUAL':'LESS');
+else if(c==='>')add(m('=')?'GREATER_EQUAL':'GREATER');
+else if(c==='\n'){line++;ls=i}
+else if(c===' '||c==='\r'||c==='\t'){}
+else if(c==='"'){let v='',closed=false;
+ while(i<s.length){const ch=s[i++];if(ch==='"'){closed=true;break}
+  if(ch==='\n'){line++;ls=i}
+  if(ch==='\\'&&i<s.length){const n=s[i++];const mp={n:'\n',t:'\t','"':'"','\\':'\\'};if(n in mp)v+=mp[n];else e('\\'+n,'Unknown escape sequence.')}else v+=ch}
+ if(!closed)e('"','Unterminated string.');else add('STRING',v)}
+else if(D(c)){while(D(s[i]||''))i++;let dec=false;
+ if(s[i]==='.'&&D(s[i+1]||'')){dec=true;i++;while(D(s[i]||''))i++}
+ const t=s.slice(st,i);
+ if(dec)add('NUMBER',new Dbl(parseFloat(t)));else if(+t>2147483647)e(t,'Number is too large.');else add('NUMBER',+t)}
+else if(A(c)){while(/\w/.test(s[i]||''))i++;add(KW[s.slice(st,i)]||'IDENTIFIER')}
+else e(c,'Unexpected character.')}
+T.push({type:'EOF',lexeme:'',literal:null,line,column:i-ls+1});return{T,bad}}
+/* ================= PARSER ================= */
+function parse(T,out){let c=0,bad=false,loop=0,sw=0,sawM=false;const ops=new Set();class PE extends Error{}
+const pk=()=>T[c],pv=()=>T[c-1],end=()=>pk().type==='EOF',chk=t=>!end()&&pk().type===t;
+const adv=()=>{if(!end())c++;return pv()};
+const mt=(...ts)=>{for(const t of ts)if(chk(t)){adv();return true}return false};
+const err=(t,m)=>{bad=true;out(`[line ${t.line}, col ${t.column}] Error ${t.type==='EOF'?'at end':`at '${t.lexeme}'`}: ${m}`);return new PE()};
+const eat=(t,m)=>{if(chk(t))return adv();throw err(pk(),m)};
+const bin=(nx,ts,k='Binary')=>()=>{let e=nx();while(mt(...ts)){const op=pv();e={t:k,l:e,op,r:nx()}}return e};
+const factor=bin(()=>unary(),['STAR','SLASH','PERCENT']),term=bin(factor,['PLUS','MINUS']);
+const cmp=bin(term,['LESS','LESS_EQUAL','GREATER','GREATER_EQUAL']),eq=bin(cmp,['EQUAL_EQUAL','BANG_EQUAL']);
+function lnot(){if(mt('NOT')){const op=pv();return{t:'Unary',op,r:lnot()}}return eq()}
+const and=bin(lnot,['AND'],'Logical'),or=bin(and,['OR'],'Logical');
+const expr=()=>or();
+function unary(){if(mt('MINUS')){const op=pv();return{t:'Unary',op,r:unary()}}return primary()}
+function finishCall(name){const args=[];if(!chk('RPAREN'))do args.push(expr());while(mt('COMMA'));eat('RPAREN',"Expect ')' after arguments.");return{t:'Call',name,args}}
+function primary(){
+ if(mt('AFFIRMATIVE'))return{t:'Lit',v:true};if(mt('DENIED'))return{t:'Lit',v:false};
+ if(mt('NUMBER','STRING'))return{t:'Lit',v:pv().literal};
+ if(mt('IDENTIFIER')){const n=pv();return mt('LPAREN')?finishCall(n):{t:'Var',name:n}}
+ if(mt('LPAREN')){const e=expr();eat('RPAREN',"Expect ')' after expression.");return{t:'Group',e}}
+ if(mt('INTEL')){const kw=pv();eat('DOT',"Expect '.' after 'intel'.");const n=eat('IDENTIFIER',"Expect function name after 'intel.'.");const k=n.lexeme;
+  if(['in','int','num'].includes(k)){eat('LPAREN',"Expect '(' after 'intel.in'.");eat('RPAREN',"Expect ')' after 'intel.in('.");return{t:'Input',kw,kind:k}}
+  if(k==='log')throw err(n,"'intel.log' is a statement and has no value.");throw err(n,`Unknown intel function '${k}'.`)}
+ throw err(pk(),'Expect expression.')}
+function sync(){if(!chk('RBRACES'))adv();while(!end()){if(pv().type==='SEMI_COLON')return;
+ if(['AGENT','INTEL','VERIFY','INFILTRATE','PENETRATE','PROTOCOL','ABORT','PROCEED','EXTRACT','OPERATION','MISSION','RBRACES','RULE','DEFAULT'].includes(pk().type))return;adv()}}
+function agentSt(){const name=eat('IDENTIFIER','Expect variable name.');eat('EQUAL',"Expect '=' after variable name.");const init=expr();eat('SEMI_COLON',"Expect ';' after variable declaration.");return{t:'Agent',name,init}}
+function assignCore(){const name=pv();
+ if(mt('PLUS_PLUS','MINUS_MINUS')){const op=pv();const k=op.type==='PLUS_PLUS'?'PLUS':'MINUS';
+  return{t:'Assign',name,value:{t:'Binary',l:{t:'Var',name},op:{...op,type:k,lexeme:op.lexeme[0]},r:{t:'Lit',v:1}}}}
+ eat('EQUAL',"Expect '=' after variable name.");return{t:'Assign',name,value:expr()}}
+function assignCase(){const s=assignCore();eat('SEMI_COLON',"Expect ';' after assignment.");return s}
+function stmt(){
+ if(mt('INTEL'))return intelSt();if(mt('AGENT'))return agentSt();
+ if(mt('IDENTIFIER')){if(chk('LPAREN')){const n=pv();adv();const call=finishCall(n);eat('SEMI_COLON',"Expect ';' after operation call.");return{t:'Expr',e:call}}return assignCase()}
+ if(mt('EXTRACT')){const kw=pv();let v=null;if(!chk('SEMI_COLON'))v=expr();eat('SEMI_COLON',"Expect ';' after 'extract'.");return{t:'Return',kw,v}}
+ if(mt('VERIFY'))return verify(true);if(mt('LBRACES'))return block();
+ if(mt('INFILTRATE')){const kw=pv();eat('LPAREN',"Expect '(' after 'infiltrate'.");const cond=expr();eat('RPAREN',"Expect ')' after condition.");return{t:'While',kw,cond,body:loopBody()}}
+ if(mt('PENETRATE'))return forSt();
+ if(mt('ABORT')){const kw=pv();if(!loop&&!sw)throw err(kw,"'abort' can only be used inside a loop or 'protocol'.");eat('SEMI_COLON',"Expect ';' after 'abort'.");return{t:'Abort'}}
+ if(mt('PROCEED')){const kw=pv();if(!loop)throw err(kw,"'proceed' can only be used inside a loop.");eat('SEMI_COLON',"Expect ';' after 'proceed'.");return{t:'Proceed'}}
+ if(mt('PROTOCOL'))return protocol();
+ throw err(pk(),'Expect statement.')}
+function intelSt(){const kw=pv();eat('DOT',"Expect '.' after 'intel'.");const n=eat('IDENTIFIER',"Expect function name after 'intel.'.");
+ if(n.lexeme!=='log')throw err(n,`'intel.${n.lexeme}' can't be used as a statement.`);
+ eat('LPAREN',"Expect '(' after 'intel.log'.");const args=[];if(!chk('RPAREN'))do args.push(expr());while(mt('COMMA'));
+ eat('RPAREN',"Expect ')' after arguments.");eat('SEMI_COLON',"Expect ';' after 'intel.log(...)'.");return{t:'Log',kw,args}}
+function block(){const st=[];while(!chk('RBRACES')&&!end()){try{st.push(stmt())}catch(e){if(!(e instanceof PE))throw e;sync()}}eat('RBRACES',"Expect '}' after block.");return{t:'Block',st}}
+function body(){if(chk('AGENT'))throw err(pk(),'Declaration needs a block.');return stmt()}
+function loopBody(){loop++;try{return body()}finally{loop--}}
+function verify(first){const kw=pv();eat('LPAREN',`Expect '(' after '${first?'verify':'alternative'}'.`);const cond=expr();eat('RPAREN',"Expect ')' after condition.");
+ const braced=chk('LBRACES');if(!first&&!braced)throw err(pk(),"Expect '{' before alternative body.");const then=body();let els=null;
+ if(chk('ALTERNATIVE')||chk('OTHERWISE')){if(!braced)throw err(pk(),"Use braces when 'verify' has 'alternative' or 'otherwise'.");
+  if(mt('ALTERNATIVE'))els=verify(false);else{adv();eat('LBRACES',"Expect '{' before otherwise body.");els=block()}}
+ return{t:'Verify',kw,cond,then,els}}
+function forSt(){const kw=pv();eat('LPAREN',"Expect '(' after 'penetrate'.");let init=null;
+ if(mt('SEMI_COLON'))init=null;else if(mt('AGENT'))init=agentSt();else if(mt('IDENTIFIER'))init=assignCase();else throw err(pk(),'Expect loop initializer.');
+ let cond=null;if(!chk('SEMI_COLON'))cond=expr();eat('SEMI_COLON',"Expect ';' after loop condition.");
+ let inc=null;if(!chk('RPAREN')){eat('IDENTIFIER','Expect variable name in the loop increment.');inc=assignCore()}
+ eat('RPAREN',"Expect ')' after for clauses.");return{t:'For',kw,init,cond,inc,body:loopBody()}}
+function ruleValue(){if(mt('AFFIRMATIVE'))return true;if(mt('DENIED'))return false;if(mt('STRING'))return pv().literal;
+ const neg=mt('MINUS');if(mt('NUMBER')){const n=pv().literal;if(!neg)return n;return n instanceof Dbl?new Dbl(-n.v):-n}
+ throw err(pk(),"Expect a literal value after 'rule'.")}
+function secBody(){const b=[];while(!chk('RULE')&&!chk('DEFAULT')&&!chk('RBRACES')&&!end()){try{b.push(stmt())}catch(e){if(!(e instanceof PE))throw e;sync()}}return b}
+function protocol(){const kw=pv();eat('LPAREN',"Expect '(' after 'protocol'.");const subject=expr();eat('RPAREN',"Expect ')' after protocol value.");eat('LBRACES',"Expect '{' before protocol body.");
+ const secs=[],seen=new Set();let sawDef=false;sw++;
+ try{while(!chk('RBRACES')&&!end()){const label=pk();try{
+  if(mt('RULE')){const v=ruleValue();eat('COLON',"Expect ':' after rule value.");if(sawDef)err(label,"'default' must be the last label in a protocol.");
+   const key=(v instanceof Dbl?'n'+v.v:typeof v==='number'?'n'+v:typeof v+v);if(seen.has(key))err(label,'Duplicate rule value.');seen.add(key);secs.push({value:v,isDef:false,body:secBody()})}
+  else if(mt('DEFAULT')){eat('COLON',"Expect ':' after 'default'.");if(sawDef)err(label,"Only one 'default' is allowed in a protocol.");sawDef=true;secs.push({value:null,isDef:true,body:secBody()})}
+  else{err(pk(),"Expect 'rule' or 'default' inside a protocol.");secBody()}
+ }catch(e){if(!(e instanceof PE))throw e;while(!end()&&!chk('RULE')&&!chk('DEFAULT')&&!chk('RBRACES'))adv()}}}finally{sw--}
+ eat('RBRACES',"Expect '}' after protocol body.");return{t:'Protocol',kw,subject,secs}}
+function top(){
+ if(mt('AGENT'))return agentSt();
+ if(mt('OPERATION')){const name=eat('IDENTIFIER','Expect operation name.');if(!ops.add(name.lexeme)&&0){}
+  if(ops.has(name.lexeme)&&opsSeen.has(name.lexeme))err(name,`Operation '${name.lexeme}' is already declared.`);opsSeen.add(name.lexeme);
+  eat('LPAREN',"Expect '(' after operation name.");const params=[];
+  if(!chk('RPAREN'))do{eat('AGENT',"Expect 'agent' before parameter name.");const p=eat('IDENTIFIER','Expect parameter name.');
+   if(params.some(q=>q.lexeme===p.lexeme))err(p,`Duplicate parameter '${p.lexeme}'.`);params.push(p)}while(mt('COMMA'));
+  eat('RPAREN',"Expect ')' after parameters.");eat('LBRACES',"Expect '{' before operation body.");return{t:'Function',name,params,body:block()}}
+ if(mt('MISSION')){const kw=pv();if(sawM)err(kw,"Only one 'mission()' is allowed.");sawM=true;
+  eat('LPAREN',"Expect '(' after 'mission'.");eat('RPAREN',"Expect ')' after 'mission('.");eat('LBRACES',"Expect '{' before mission body.");return{t:'Mission',kw,body:block()}}
+ throw err(pk(),"Only 'agent', 'operation' and 'mission' declarations are allowed at the top level.")}
+const opsSeen=new Set();const d=[];
+while(!end()){try{d.push(top())}catch(e){if(!(e instanceof PE))throw e;let depth=0;
+ do{const t=adv();if(t.type==='LBRACES')depth++;else if(t.type==='RBRACES'&&depth>0)depth--}while(!end()&&!(depth===0&&['AGENT','OPERATION','MISSION'].includes(pk().type)))}}
+if(!sawM&&!bad)err(pk(),"Program needs a 'mission()' entry point.");
+return{d,bad}}
+/* ================= INTERPRETER ================= */
+class RtErr extends Error{constructor(t,m){super(m);this.token=t}}
+class Stop{}class Brk{}class Cont{}class Ret{constructor(v){this.value=v}}
+const isNum=x=>typeof x==='number'||x instanceof Dbl,nv=x=>x instanceof Dbl?x.v:x;
+const str=x=>x===true?'affirmative':x===false?'denied':x instanceof Dbl?(Number.isInteger(x.v)?x.v.toFixed(1):String(x.v)):String(x);
+class Env{constructor(p){this.m=new Map();this.p=p||null}
+ get(t){if(this.m.has(t.lexeme))return this.m.get(t.lexeme);if(this.p)return this.p.get(t);throw new RtErr(t,`Undefined variable '${t.lexeme}'.`)}
+ set(t,v){if(this.m.has(t.lexeme)){this.m.set(t.lexeme,v);return}if(this.p)return this.p.set(t,v);throw new RtErr(t,`Undefined variable '${t.lexeme}'.`)}}
+class Interp{
+ constructor(io){this.io=io;this.g=new Env();this.env=this.g;this.ops=new Map();this.depth=0;this.steps=0;this.stopped=false;this.failed=false}
+ async tick(){if(this.stopped)throw new Stop();if(++this.steps%20000===0){await new Promise(r=>setTimeout(r));if(this.stopped)throw new Stop()}}
+ async run(prog){try{let mission=null;
+  for(const d of prog){if(d.t==='Function')this.ops.set(d.name.lexeme,d);else if(d.t==='Mission')mission=d}
+  for(const d of prog)if(d.t==='Agent')await this.exec(d);
+  if(mission){const prev=this.env;try{this.env=new Env(this.g);for(const s of mission.body.st)await this.exec(s)}catch(r){if(!(r instanceof Ret))throw r}finally{this.env=prev}}
+ }catch(e){if(e instanceof RtErr){this.io.err(`[line ${e.token.line}, col ${e.token.column}] Runtime error: ${e.message}`);this.failed=true}else throw e}}
+ async block(list,scope){const prev=this.env;try{this.env=scope;for(const s of list)await this.exec(s)}finally{this.env=prev}}
+ truth(kw,v){if(typeof v==='boolean')return v;throw new RtErr(kw,'Condition must be a boolean.')}
+ async exec(s){await this.tick();
+  switch(s.t){
+  case'Log':{const p=[];for(const a of s.args)p.push(str(await this.ev(a)));this.io.print(p.join(' '));return}
+  case'Agent':{if(this.env.m.has(s.name.lexeme))throw new RtErr(s.name,`Variable '${s.name.lexeme}' is already declared.`);const v=await this.ev(s.init);this.env.m.set(s.name.lexeme,v);return}
+  case'Assign':this.env.set(s.name,await this.ev(s.value));return;
+  case'Block':return this.block(s.st,new Env(this.env));
+  case'Verify':{const c=this.truth(s.kw,await this.ev(s.cond));if(c)await this.exec(s.then);else if(s.els)await this.exec(s.els);return}
+  case'Abort':throw new Brk();case'Proceed':throw new Cont();
+  case'While':try{while(this.truth(s.kw,await this.ev(s.cond))){try{await this.exec(s.body)}catch(c){if(!(c instanceof Cont))throw c}}}catch(b){if(!(b instanceof Brk))throw b}return;
+  case'For':{const prev=this.env;try{this.env=new Env(prev);if(s.init)await this.exec(s.init);
+   try{while(!s.cond||this.truth(s.kw,await this.ev(s.cond))){try{await this.exec(s.body)}catch(c){if(!(c instanceof Cont))throw c}if(s.inc)await this.exec(s.inc)}}catch(b){if(!(b instanceof Brk))throw b}}finally{this.env=prev}return}
+  case'Protocol':{const subj=await this.ev(s.subject);let st=s.secs.findIndex(x=>!x.isDef&&this.eq(subj,x.value));if(st<0)st=s.secs.findIndex(x=>x.isDef);
+   const prev=this.env;try{this.env=new Env(prev);if(st>=0)try{for(let n=st;n<s.secs.length;n++)for(const i of s.secs[n].body)await this.exec(i)}catch(b){if(!(b instanceof Brk))throw b}}finally{this.env=prev}return}
+  case'Expr':await this.call(s.e);return;
+  case'Return':throw new Ret(s.v?await this.ev(s.v):null);
+  default:throw new Error('Unknown statement '+s.t)}}
+ async ev(e){switch(e.t){
+  case'Lit':return e.v;case'Group':return this.ev(e.e);case'Var':return this.env.get(e.name);
+  case'Unary':{const r=await this.ev(e.r),op=e.op;if(op.type==='MINUS'){if(typeof r==='number')return-r;if(r instanceof Dbl)return new Dbl(-r.v);throw new RtErr(op,'Operand must be a number.')}return!this.bool(op,r)}
+  case'Logical':{const l=this.bool(e.op,await this.ev(e.l));if(e.op.type==='OR'&&l)return true;if(e.op.type==='AND'&&!l)return false;return this.bool(e.op,await this.ev(e.r))}
+  case'Binary':return this.bin(e.op,await this.ev(e.l),await this.ev(e.r));
+  case'Input':return this.read(e.kw,e.kind);
+  case'Call':{const r=await this.call(e);if(r===null)throw new RtErr(e.name,`Operation '${e.name.lexeme}' did not return a value.`);return r}}}
+ bool(op,v){if(typeof v==='boolean')return v;throw new RtErr(op,'Operand must be a boolean.')}
+ eq(a,b){return isNum(a)&&isNum(b)?nv(a)===nv(b):a===b}
+ bin(op,l,r){const t=op.type;if(t==='EQUAL_EQUAL')return this.eq(l,r);if(t==='BANG_EQUAL')return!this.eq(l,r);
+  if(t==='PLUS'&&(typeof l==='string'||typeof r==='string'))return str(l)+str(r);
+  if(!isNum(l)||!isNum(r))throw new RtErr(op,'Operands must be a Number.');
+  const a=nv(l),b=nv(r),ints=typeof l==='number'&&typeof r==='number';
+  const cm={LESS:a<b,LESS_EQUAL:a<=b,GREATER:a>b,GREATER_EQUAL:a>=b};if(t in cm)return cm[t];
+  if((t==='SLASH'||t==='PERCENT')&&b===0)throw new RtErr(op,t==='SLASH'?'Division by zero.':'Modulo by zero.');
+  let v=t==='PLUS'?a+b:t==='MINUS'?a-b:t==='STAR'?a*b:t==='SLASH'?(ints?Math.trunc(a/b):a/b):a%b;
+  if(ints){if(v>2147483647||v<-2147483648)throw new RtErr(op,'Integer overflow.');return v}return new Dbl(v)}
+ async call(c){const n=c.name.lexeme,f=this.ops.get(n);if(!f)throw new RtErr(c.name,`Undefined operation '${n}'.`);
+  const ex=f.params.length,gv=c.args.length;if(ex!==gv)throw new RtErr(c.name,`Operation '${n}' expects ${ex} ${ex===1?'argument':'arguments'} but got ${gv}.`);
+  const vals=[];for(const a of c.args)vals.push(await this.ev(a));
+  if(this.depth>=5000)throw new RtErr(c.name,'Stack overflow: too many nested operation calls.');
+  const sc=new Env(this.g);f.params.forEach((p,i)=>sc.m.set(p.lexeme,vals[i]));
+  const prev=this.env;this.depth++;
+  try{this.env=sc;for(const s of f.body.st)await this.exec(s)}catch(r){if(r instanceof Ret)return r.value;throw r}finally{this.env=prev;this.depth--}
+  return null}
+ async read(kw,kind){const line=await this.io.read();if(line===null)throw new RtErr(kw,`No input available for intel.${kind}().`);
+  if(kind==='in')return line;const t=line.trim();
+  if(kind==='int'){if(!/^-?\d+$/.test(t))throw new RtErr(kw,`Expected a whole number but got '${line}'.`);if(Math.abs(+t)>2147483647)throw new RtErr(kw,'Number is too large: '+t);return+t}
+  if(!/^-?\d+(\.\d+)?$/.test(t))throw new RtErr(kw,`Expected a number but got '${line}'.`);
+  if(t.includes('.'))return new Dbl(parseFloat(t));if(Math.abs(+t)>2147483647)throw new RtErr(kw,'Number is too large: '+t);return+t}}
+/* ================= EDITOR UI ================= */
+const DEMO=`-.-. SpyScript demo: press Run (Ctrl+Enter)
+agent codename = "Falcon";
+
+operation score(agent a, agent b) {
+    extract a * b;
+}
+
+mission() {
+    intel.log("Agent", codename, "reporting.");
+    agent total = 0;
+    penetrate (agent i = 1; i <= 5; i++) {
+        total = total + score(i, 2);
+    }
+    intel.log("Total:", total);
+    verify (total > 20) {
+        intel.log("Mission ready:", affirmative);
+    } otherwise {
+        intel.log("Stand down.");
+    }
+}
+`;
+let ws={files:{'demo.ss':DEMO},active:'demo.ss'};
+try{const r=JSON.parse(localStorage.getItem('spyscript_ws')||'null');if(r&&r.files&&r.files[r.active])ws=r}catch(e){}
+const ta=$('ta'),hl=$('hl'),ln=$('ln'),out=$('out'),inp=$('inp');
+const KWS=new Set(Object.keys(KW).filter(k=>!['affirmative','denied','intel'].includes(k)));
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function paint(){const s=ta.value;
+ hl.innerHTML=s.replace(/(-\.-\.[^\n]*)|("(?:\\.|[^"\\\n])*"?)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|([\s\S])/g,(m,c,st,n,w)=>{const e=esc(m);
+  if(c)return`<i class="c">${e}</i>`;if(st)return`<i class="s">${e}</i>`;if(n)return`<i class="n">${e}</i>`;
+  if(w){if(w==='affirmative'||w==='denied')return`<i class="b">${e}</i>`;if(w==='intel')return`<i class="i">${e}</i>`;if(KWS.has(w))return`<i class="k">${e}</i>`}return e})+'\n';
+ ln.textContent=Array.from({length:s.split('\n').length},(_,i)=>i+1).join('\n');pos()}
+function pos(){const b=ta.value.slice(0,ta.selectionStart).split('\n');$('st').textContent=`Ln ${b.length}, Col ${b[b.length-1].length+1}`}
+const persist=()=>{try{localStorage.setItem('spyscript_ws',JSON.stringify(ws));return true}catch(e){return false}};
+function flash(m){$('st').textContent=m;setTimeout(pos,1200)}
+function renderFiles(){const f=$('files');f.innerHTML='';
+ for(const n of Object.keys(ws.files)){const d=document.createElement('div');d.className='f'+(n===ws.active?' a':'');d.textContent=n;
+  const x=document.createElement('b');x.textContent='×';x.onclick=e=>{e.stopPropagation();if(Object.keys(ws.files).length<2)return;delete ws.files[n];if(ws.active===n)ws.active=Object.keys(ws.files)[0];persist();load()};
+  d.appendChild(x);d.onclick=()=>{ws.active=n;load()};f.appendChild(d)}}
+function load(){ta.value=ws.files[ws.active];$('fname').value=ws.active;renderFiles();paint()}
+ta.addEventListener('input',()=>{ws.files[ws.active]=ta.value;paint()});
+ta.addEventListener('scroll',()=>{hl.scrollTop=ta.scrollTop;hl.scrollLeft=ta.scrollLeft;ln.scrollTop=ta.scrollTop});
+['keyup','click'].forEach(e=>ta.addEventListener(e,pos));
+ta.addEventListener('keydown',e=>{
+ if(e.key==='Tab'){e.preventDefault();ta.setRangeText('    ',ta.selectionStart,ta.selectionEnd,'end');ta.dispatchEvent(new Event('input'))}
+ if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();save()}
+ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run()}});
+function rename(n){n=(n||'').trim().replace(/[\\/]/g,'');if(!n||n===ws.active){load();return}if(!/\.\w+$/.test(n))n+='.ss';
+ if(ws.files[n]){load();flash('Name already used');return}
+ const f={};for(const k of Object.keys(ws.files))f[k===ws.active?n:k]=ws.files[k];ws.files=f;ws.active=n;persist();load();flash('Renamed')}
+$('fname').onchange=e=>rename(e.target.value);
+$('fname').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur()}if(e.key==='Escape'){e.target.value=ws.active;e.target.blur()}};
+$('ren').onclick=()=>{$('fname').focus();$('fname').select()};
+function save(){flash(persist()?'Saved':'Save failed')}
+$('save').onclick=save;
+$('new').onclick=()=>{let i=1;while(ws.files[`untitled-${i}.ss`])i++;ws.files[`untitled-${i}.ss`]='mission() {\n    intel.log("Hello, agent.");\n}\n';ws.active=`untitled-${i}.ss`;persist();load();ta.focus()};
+$('open').onclick=()=>$('fi').click();
+$('fi').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{ws.files[f.name]=String(r.result);ws.active=f.name;persist();load()};r.readAsText(f);e.target.value=''};
+$('dl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ta.value],{type:'text/plain'}));a.download=ws.active;a.click()};
+/* terminal */
+function p(m,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=m;out.appendChild(d);out.scrollTop=out.scrollHeight}
+$('clr').onclick=()=>out.innerHTML='';
+let itp=null,pend=null;
+const io={print:m=>p(m),err:m=>p(m,'e'),read:()=>new Promise((res,rej)=>{pend={res,rej};inp.focus()})};
+inp.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const v=inp.value;inp.value='';if(pend){p('> '+v,'in');const r=pend.res;pend=null;r(v)}});
+function running(on){$('run').disabled=on;$('stop').disabled=!on;$('dot').className=on?'on':''}
+async function run(){if(itp)return;persist();out.innerHTML='';p('$ spyscript '+ws.active,'d');
+ const lx=lex(ta.value,io.err);if(lx.bad)return p('Process exited with code 65','d');
+ const ps=parse(lx.T,io.err);if(ps.bad)return p('Process exited with code 65','d');
+ itp=new Interp(io);running(true);let code=0;
+ try{await itp.run(ps.d);if(itp.failed)code=70}catch(e){code=e instanceof Stop?143:70;p(e instanceof Stop?'Process terminated by user.':'Internal error: '+e.message,'e')}
+ pend=null;itp=null;running(false);p('Process exited with code '+code,'d')}
+function stop(){if(!itp)return;itp.stopped=true;if(pend){const r=pend.rej;pend=null;r(new Stop())}}
+$('run').onclick=run;$('stop').onclick=stop;
+let th='dark';try{th=localStorage.getItem('spyscript_theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}
+const setTh=t=>{th=t;document.documentElement.dataset.theme=t;$('theme').textContent=t==='dark'?'☀ Light':'☾ Dark';try{localStorage.setItem('spyscript_theme',t)}catch(e){}};
+$('theme').onclick=()=>setTh(th==='dark'?'light':'dark');setTh(th);
+load();p('SpyScript Field Terminal ready. Ctrl+Enter runs, Ctrl+S saves.','d');
+</script></body></html>
